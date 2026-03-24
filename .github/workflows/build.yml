@@ -24,31 +24,17 @@ jobs:
     - name: Create local.properties
       run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
     
-    - name: Show directory structure
-      run: |
-        ls -la android/
-        ls -la android/app/
-        ls -la android/app/src/
-        ls -la android/app/src/main/
-    
-    - name: Build with Gradle
+    - name: Build APK
       run: |
         cd android
-        gradle --version || echo "Gradle not available"
-        gradle wrapper --gradle-version 8.2 || echo "Wrapper failed"
+        gradle wrapper --gradle-version 8.2
         chmod +x gradlew
-        ./gradlew clean assembleDebug --stacktrace 2>&1 || echo "Build may have issues"
-    
-    - name: Check APK output
-      run: |
-        ls -la android/app/build/outputs/apk/debug/ 2>/dev/null || echo "No debug APK"
-        ls -la android/app/build/outputs/apk/ 2>/dev/null || echo "No APK directory"
-        find android -name "*.apk" 2>/dev/null || echo "No APK found"
+        ./gradlew clean assembleDebug --no-daemon
+        ls -la app/build/outputs/apk/
+        ls -la app/build/outputs/apk/debug/
     
     - name: Upload APK
-      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: DataLinkAnalyzer.apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
-        if-no-files-found: error
