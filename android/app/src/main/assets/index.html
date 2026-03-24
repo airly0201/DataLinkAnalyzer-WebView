@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据关联分析平台</title>
+    <link rel="stylesheet" href="styles.css?v=20260322g">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔗 数据关联分析平台</h1>
+            <p>支持多表关联、灵活查询、可视化分析</p>
+        </header>
+        
+        <main class="two-column">
+            <!-- 左侧：选择面板 -->
+            <div class="left-panel">
+                <!-- 模块一：文件选择 -->
+                <section class="module">
+                    <h2>📂 1. 文件选择</h2>
+                    
+                    <!-- 目录选择器 -->
+                    <div class="form-group">
+                        <label>路径：</label>
+                        <select id="folder-select" onchange="onFolderSelectChange()" style="flex: 1; margin-right: 5px;">
+                            <option value="">-- 选择目录 --</option>
+                            <option value="/root/.openclaw/workspace/tasks/data-analyzer-platform/test_data">test_data</option>
+                            <option value="/root">/root</option>
+                            <option value="/home">/home</option>
+                            <option value="/tmp">/tmp</option>
+                            <option value="custom">自定义输入...</option>
+                        </select>
+                        <input type="text" id="folder-path-input" placeholder="输入文件夹路径" 
+                               style="flex: 1; display: none;">
+                        <button class="btn-primary" onclick="refreshFiles()">🔍 扫描</button>
+                    </div>
+                    
+                    <div class="folder-path" id="folder-path">未选择文件夹</div>
+                    <div class="file-list" id="file-list">
+                        <p class="hint">输入路径后点击扫描</p>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn-primary" onclick="scanAllFiles()">🔍 扫描全部文件</button>
+                    </div>
+                </section>
+                
+                <!-- 模块二：关联配置 -->
+                <section class="module">
+                    <h2>🔗 2. 多表关联</h2>
+                    <div class="form-group">
+                        <label>主表：</label>
+                        <select id="main-table" onchange="loadTableSheets()">
+                            <option value="">-- 选择主表 --</option>
+                        </select>
+                    </div>
+                    
+                    <div id="link-config-area" style="display:none;">
+                        <div class="link-item">
+                            <div class="form-group">
+                                <label>关联表：</label>
+                                <select id="link-table" onchange="loadLinkTableSheets()">
+                                    <option value="">-- 选择关联表 --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>关联字段：</label>
+                                <select id="main-field">
+                                    <option value="">-- 主表字段 --</option>
+                                </select>
+                                <span>=</span>
+                                <select id="link-field">
+                                    <option value="">-- 关联表字段 --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>连接方式：</label>
+                                <select id="join-type">
+                                    <option value="inner">内连接 (inner)</option>
+                                    <option value="left">左连接 (left)</option>
+                                    <option value="outer">全连接 (outer)</option>
+                                </select>
+                            </div>
+                            <button class="btn-secondary" onclick="addLink()">➕ 添加关联</button>
+                        </div>
+                    </div>
+                    
+                    <div class="link-list" id="link-list">
+                        <p class="hint">未配置关联（可单表查询）</p>
+                    </div>
+                </section>
+                
+                <!-- 模块三：输出字段 -->
+                <section class="module">
+                    <h2>📤 3. 输出字段</h2>
+                    <div class="form-group">
+                        <select id="output-table" onchange="loadOutputFields()">
+                            <option value="">-- 选择表 --</option>
+                        </select>
+                        <select id="output-sheet">
+                            <option value="">-- 选择Sheet --</option>
+                        </select>
+                    </div>
+                    <div class="field-checkboxes" id="field-checkboxes">
+                        <p class="hint">选择表后显示字段</p>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn-secondary" onclick="addOutputFields()">➕ 添加选中字段</button>
+                    </div>
+                    <div class="selected-tags" id="selected-tags"></div>
+                </section>
+            </div>
+            
+            <!-- 右侧：输出面板 -->
+            <div class="right-panel">
+                <!-- 模块四：功能按钮 -->
+                <section class="module">
+                    <h2>⚡ 4. 功能操作</h2>
+                    <div class="button-group">
+                        <button class="btn-primary btn-lg" onclick="doSaveConfig()">💾 保存配置</button>
+                        <select id="configSelect" style="padding:8px;border-radius:4px;border:1px solid #ccc;">
+                            <option value="">-- 选择配置文件 --</option>
+                        </select>
+                        <button class="btn-primary btn-lg" onclick="loadSelectedConfig()">📂 读取</button>
+                        <button class="btn-primary btn-lg" onclick="executeQuery()">🔍 执行查询</button>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-secondary btn-lg" onclick="generateChart()">📈 生成图表</button>
+                        <button class="btn-secondary btn-lg" onclick="generateScript()">🐍 生成脚本</button>
+                    </div>
+
+                </section>
+                
+                <!-- 查询结果 -->
+                <section class="module result-section">
+                    <h2>📊 查询结果</h2>
+                    <div class="result-info" id="result-info">
+                        <p>等待查询...</p>
+                    </div>
+                    <div class="result-actions" id="result-actions" style="display:none;">
+                        <button class="btn-primary" onclick="downloadResult()">📥 下载结果</button>
+                    </div>
+                </section>
+                
+                <!-- 调试输出 -->
+                <section class="module debug-panel">
+                    <h3>🔧 调测信息</h3>
+                    <div class="debug-content" id="debug-content">
+                        <p>等待操作...</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <script src="app.js?v=20260322"></script>
+</body>
+</html>
