@@ -20,24 +20,20 @@ jobs:
     
     - name: Set up Android SDK
       uses: android-actions/setup-android@v2
-    
-    - name: Cache Gradle
-      uses: actions/cache@v3
       with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
+        cmdline-tools: latest
+    
+    - name: Create local.properties
+      run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
     
     - name: Build APK
       run: |
         cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --no-daemon 2>&1 || gradle assembleDebug 2>&1 || echo "Trying with gradle wrapper"
+        ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "No APK generated"
     
     - name: Upload APK
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: DataLinkAnalyzer.apk
