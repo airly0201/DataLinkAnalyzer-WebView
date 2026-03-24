@@ -20,17 +20,30 @@ jobs:
     
     - name: Set up Android SDK
       uses: android-actions/setup-android@v2
-      with:
-        cmdline-tools: latest
     
     - name: Create local.properties
       run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
     
-    - name: Build APK
+    - name: Show directory structure
+      run: |
+        ls -la android/
+        ls -la android/app/
+        ls -la android/app/src/
+        ls -la android/app/src/main/
+    
+    - name: Build with Gradle
       run: |
         cd android
-        ./gradlew assembleDebug --no-daemon 2>&1 || gradle assembleDebug 2>&1 || echo "Trying with gradle wrapper"
-        ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "No APK generated"
+        gradle --version || echo "Gradle not available"
+        gradle wrapper --gradle-version 8.2 || echo "Wrapper failed"
+        chmod +x gradlew
+        ./gradlew clean assembleDebug --stacktrace 2>&1 || echo "Build may have issues"
+    
+    - name: Check APK output
+      run: |
+        ls -la android/app/build/outputs/apk/debug/ 2>/dev/null || echo "No debug APK"
+        ls -la android/app/build/outputs/apk/ 2>/dev/null || echo "No APK directory"
+        find android -name "*.apk" 2>/dev/null || echo "No APK found"
     
     - name: Upload APK
       if: success()
@@ -38,3 +51,4 @@ jobs:
       with:
         name: DataLinkAnalyzer.apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
+        if-no-files-found: error
